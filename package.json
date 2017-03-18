@@ -1,0 +1,15 @@
+{
+  "name": "seminar-js-example",
+  "version": "1.0.0",
+  "description": "A simple api server built in Node and Express",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "duwonyi <duwonyi@gmail.com> (duwonyi.net)",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.15.2"
+  }
+}

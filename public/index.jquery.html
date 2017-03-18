@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <script src="https://code.jquery.com/jquery-3.2.0.min.js"   integrity="sha256-JAW99MJVpJBGcbzEuXk4Az05s/XyDdBomFqNlM3ic+I=" crossorigin="anonymous"></script>
+</head>
+<body>
+  <h1>Simple Contacts</h1>
+  <form>
+    <fieldset>
+      <legend>Contact form:</legend>
+      First Name: <input id="first_name" type="text"><br>
+      Last Name: <input id="last_name" type="text"><br>
+      Tel: <input id="tel_no" type="text">
+      <input id="user_id" type="hidden">
+    </fieldset>
+    <fieldset>
+      <legend>Action</legend>
+      <button id="add_btn">Add</button>
+      <button id="del_btn" disabled>Delete</button>
+    </fieldset>
+  </form>
+  <h2>Contact List</h2>
+  <ul id="contacts">
+  </ul>
+  <script>
+    $(function() {
+      $.getJSON("/contacts", function(){
+        console.log("success");
+      }).done(function(data){
+        $.each(data, function(i, item){
+          addContact(item);
+        });
+      });
+    });
+
+    $("#add_btn").click(function(event){
+      var contact = getContactInput();
+      if (!contact.firstName || !contact.lastName || !contact.telNo) {
+        alert("All fields must be filled.");
+        return;
+      }
+      if (event.target.innerHTML === "Add") {
+        addContact(contact);
+      } else {
+        editContact(contact, $("#user_id").val());
+        event.target.innerHTML = "Add";
+        $("#del_btn").prop("disabled", true);
+      }
+      resetInput();
+      event.preventDefault();
+    });
+
+    $("#del_btn").click(function(event){
+      $("li[data-id='" + $("#user_id").val() + "']").remove();
+      $(event.target).prop("disabled", true);
+      $("#add_btn").text("Add");
+      resetInput();
+      event.preventDefault();
+    });
+
+    $("#contacts").click(function(event){
+      $("#del_btn").prop("disabled", false);
+      $("#add_btn").text("Edit");
+
+      var targetContact = getExtractContact(event.target);
+
+      $("#first_name").val(targetContact.firstName);
+      $("#last_name").val(targetContact.lastName);
+      $("#tel_no").val(targetContact.telNo);
+      $("#user_id").val(targetContact.userId);
+
+      event.preventDefault();
+    });
+
+    function addContact(contact) {
+      $("#contacts").append(
+        "<li data-id='" + (!contact.id ? getNewUserId() : contact.id) + "'>" + contact.firstName + " " + contact.lastName + " | " + contact.telNo + "</li>"
+      );
+    }
+
+    function editContact(contact, userId) {
+      $("li[data-id='" + userId + "']").html(contact.firstName + " " + contact.lastName + " | " + contact.telNo);
+    }
+
+    function getNewUserId() {
+      return ($("#contacts li").length + 1) + ""
+    }
+
+    function getContactInput() {
+      return {
+        "firstName": $("#first_name").val(),
+        "lastName": $("#last_name").val(),
+        "telNo": $("#tel_no").val()
+      }
+    }
+
+    function resetInput() {
+      $("input").val("");
+    }
+
+    function getExtractContact(contact) {
+      var aContact = contact.innerHTML.split("|");
+      return {
+        "firstName": aContact[0].split(" ")[0],
+        "lastName": aContact[0].split(" ")[1],
+        "telNo": jQuery.trim(aContact[1]),
+        "userId": $(contact).data("id")
+      }
+    }
+  </script>
+</body>
+</html>

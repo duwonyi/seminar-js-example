@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body onload="loadAllContactsOnLoad();">
+  <h1>Simple Contacts</h1>
+  <form>
+    <fieldset>
+      <legend>Contact form:</legend>
+      First Name: <input id="first_name" type="text"><br>
+      Last Name: <input id="last_name" type="text"><br>
+      Tel: <input id="tel_no" type="text">
+      <input id="user_id" type="hidden">
+    </fieldset>
+    <fieldset>
+      <legend>Action</legend>
+      <button id="add_btn" onclick="addContactOnClick(this); return false;">Add</button>
+      <button id="del_btn" onclick="deleteContactOnClick(this); return false;" disabled>Delete</button>
+    </fieldset>
+  </form>
+  <h2>Contact List</h2>
+  <ul id="contacts" onclick="selectContactOnClick(event); return false;">
+  </ul>
+  <script>
+    function loadAllContactsOnLoad() {
+      var req = new XMLHttpRequest();
+      req.open("get", "/contacts", true);
+      req.onreadystatechange = function(e) {
+        if (req.readyState == 4 && req.status == 200) {
+          var contacts = JSON.parse(req.responseText);
+          for (var i = 0; i < contacts.length; i++) {
+            addContact(contacts[i]);
+          }
+        }
+      }
+      req.send(null);
+    }
+
+    function addContactOnClick($this) {
+      var $firstNameInput = document.getElementById("first_name");
+      var $lastNameInput = document.getElementById("last_name");
+      var $telInput = document.getElementById("tel_no");
+
+      if (!$firstNameInput.value || !$lastNameInput.value || !$telInput.value) {
+        alert("All fields must be filled.");
+        return;
+      }
+
+      var contact = {
+        "firstName": $firstNameInput.value,
+        "lastName": $lastNameInput.value,
+        "telNo": $telInput.value
+      };
+
+      if ($this.innerHTML === "Add") {
+        addContact(contact);
+      } else {
+        var user_id = document.getElementById('user_id').value;
+        var $delButton = document.getElementById("del_btn");
+        editContact(contact, user_id);
+        $this.innerHTML = "Add";
+        $delButton.disabled = true;
+      }
+      resetInput();
+      return false;
+    }
+
+    function deleteContactOnClick($this) {
+      var $userIdInput = document.getElementById('user_id').value;
+      var user_id = $userIdInput.value;
+      var $target = findContact(user_id);
+      var $parent = $target.parentNode;
+      var $addButton = document.getElementById("add_btn");
+      $parent.removeChild($target);
+      $this.disabled = true;
+      $addButton.innerHTML = "Add";
+      resetInput();
+    }
+
+    function selectContactOnClick(event) {
+      var $delButton = document.getElementById("del_btn");
+      var $addButton = document.getElementById("add_btn");
+      $delButton.disabled = false;
+      $addButton.innerHTML = "Edit";
+
+      var target = getExtractContact(event.target);
+
+      var $firstNameInput = document.getElementById("first_name");
+      var $lastNameInput = document.getElementById("last_name");
+      var $telInput = document.getElementById("tel_no");
+      var $userIdInput = document.getElementById("user_id");
+
+      $firstNameInput.value = target.firstName;
+      $lastNameInput.value = target.lastName;
+      $telInput.value = target.telNo;
+      $userIdInput.value = target.userId;
+
+      return false;
+    }
+
+    function addContact(contact) {
+      var $contacts = document.getElementById("contacts");
+      var contactText = contact.firstName + " " + contact.lastName + " | " + contact.telNo;
+      var $li = document.createElement("li");
+      if (!contact.id) {
+        $li.className = getNewUserId();
+      } else {
+        $li.className = "id_" + contact.id;
+      }
+      var $text = document.createTextNode(contactText);
+
+      $li.appendChild($text);
+      $contacts.appendChild($li);
+    }
+
+    function getNewUserId() {
+      var $contacts = document.getElementById("contacts");
+      var count = 0;
+      for (var i = 0; i < $contacts.childNodes.length; i++) {
+        var $child = $contacts.childNodes[i];
+        if ($child.tagName === "LI") {
+          count++;
+        }
+      }
+      return "id_" + (count + 1);
+    }
+
+    function editContact(contact, userId) {
+      var $target = findContact(userId);
+      var contactText = contact.firstName + " " + contact.lastName + " | " + contact.telNo;
+      $target.innerHTML = contactText;
+    }
+
+    function findContact(userId) {
+      var $contacts = document.getElementById("contacts");
+      for (var i = 0; i < $contacts.childNodes.length; i++) {
+        var $child = $contacts.childNodes[i];
+        if ($child.className === "id_" + userId) {
+          return $child;
+        }
+      }
+    }
+
+    function getExtractContact($contact) {
+      var aContact = $contact.innerHTML.split("|");
+      return {
+        "firstName": aContact[0].split(" ")[0],
+        "lastName": aContact[0].split(" ")[1],
+        "telNo": aContact[1].replace(/^\s+|s+$/g, ""),
+        "userId": $contact.className.replace(/^id_/,"")
+      }
+    }
+
+    function resetInput() {
+      document.getElementById("first_name").value = "";
+      document.getElementById("last_name").value = "";
+      document.getElementById("tel_no").value = "";
+      document.getElementById("user_id").value = "";
+    }
+  </script>
+</body>
+</html>
